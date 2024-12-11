@@ -7,16 +7,6 @@ server.use(express.json());
 const sqlite3= require('sqlite3').verbose();
 const db = new sqlite3.Database('./database.db');
 
-
-const CreateUsertable =`CREATE TABLE IF NOT EXISTS user(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    username TEXT NOT NULL,
-    password TEXT NOT NULL,
-    phonenumber TEXT 
-    )`;
-
 server.post('/user/register', (req , res)=> {
     let name = req.body.name;
     let email = req.body.email;
