@@ -1,21 +1,9 @@
 const express = require("express");
-// const db_access=require('./db.js');
-// const db=db_access.db;
+const db_access=require('./db.js');
+const db=db_access.db;
 const port= 1517;
 const server=express();
 server.use(express.json());
-const sqlite3= require('sqlite3').verbose();
-const db = new sqlite3.Database('./database.db');
-
-
-const CreateUsertable =`CREATE TABLE IF NOT EXISTS user(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    username TEXT NOT NULL,
-    password TEXT NOT NULL,
-    phonenumber TEXT 
-    )`;
 
 server.post('/user/register', (req , res)=> {
     let name = req.body.name;
@@ -47,7 +35,6 @@ server.post('/user/login', (req , res)=> {
 
     if ( !email || !password || !username){
         return res.status(400).send('missing fields');
-
     }
     const loginquery = `SELECT * FROM user WHERE email = '${email}' AND password ='${password}' AND username = '${username}'`;
     db.get(loginquery, (err, row) =>{
@@ -57,8 +44,8 @@ server.post('/user/login', (req , res)=> {
         else {
             return res.status(200).send(`successful login`);
         }
-    })
-})
+    });
+});
 
 
 server.get('/users', (req, res) => {
@@ -88,15 +75,4 @@ server.get('/users', (req, res) => {
 
 server.listen(port, ()=>{
     console.log(`server is listening at port: ${port}`)
-    db.serialize(()=>{
-        db.run(CreateUsertable,(err)=>{
-            if (err){
-                console.error("failed to create user table",err)
-    
-            }
-            else {console.log("UserTable created successfully")
-    
-            }
-        })
-    })
 })
