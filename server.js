@@ -223,6 +223,142 @@ server.delete('/product/delete/:id', (req, res)=>{
 })
 
 
+server.put('/user/:id', (req, res) => {
+    const { id } = req.params; 
+    const { name, email, username, password, phonenumber} = req.body;
+    let queryadd = [];
+    let paramm = [];
+
+    
+    if (name) {
+        queryadd.push("name = ?"); 
+        paramm.push(name);
+    }
+    if (email) {
+        queryadd.push("email = ?");
+        paramm.push(email);
+    }
+    if (username) {
+        queryadd.push("username = ?");
+        paramm.push(username);
+    }
+    if (password) {
+        queryadd.push("password = ?");
+        paramm.push(password);
+    }
+    if (phonenumber) {
+        queryadd.push("phonenumber = ?");
+        paramm.push(phonenumber);
+    }
+
+    if (queryadd.length === 0) {
+        return res.status(400).send('No fields to update.');
+    }
+   
+    paramm.push(id);
+
+    db.run(
+        `UPDATE user SET ${queryadd.join(', ')} WHERE id = ?`,
+        paramm,
+        (err) => {
+            if (err) return res.status(500).send(err.message); 
+            res.status(200).send('user account updated successfully');
+        }
+    );
+});
+
+
+
+
+
+server.put('/brand/:id', (req, res) => {
+    const { id } = req.params; 
+    const { name, description, location, rating} = req.body;
+    let queryadd = [];
+    let paramm = [];
+
+    
+    if (name) {
+        queryadd.push("name = ?"); 
+        paramm.push(name);
+    }
+    if (description) {
+        queryadd.push("description = ?");
+        paramm.push(description);
+    }
+    if (location) {
+        queryadd.push("location = ?");
+        paramm.push(location);
+    }
+    if (rating) {
+        queryadd.push("rating = ?");
+        paramm.push(rating);
+    }
+
+    if (queryadd.length === 0) {
+        return res.status(400).send('No fields to update.');
+    }
+   
+    paramm.push(id);
+
+    db.run(
+        `UPDATE brand SET ${queryadd.join(', ')} WHERE id = ?`,
+        paramm,
+        (err) => {
+            if (err) return res.status(500).send(err.message); 
+            res.status(200).send('brand updated successfully');
+        }
+    );
+});
+
+
+server.put('/products/:id', (req, res) => {
+    const { id } = req.params; 
+    const { name, description, price, size} = req.body;
+    let queryadd = [];
+    let paramm = [];
+
+    
+    if (name) {
+        queryadd.push("name = ?"); 
+        paramm.push(name);
+    }
+    if (description) {
+        queryadd.push("description = ?");
+        paramm.push(description);
+    }
+    if (price) {
+        queryadd.push("price = ?");
+        paramm.push(price);
+    }
+    if (size) {
+        queryadd.push("size = ?");
+        paramm.push(size);
+    }
+
+    if (queryadd.length === 0) {
+        return res.status(400).send('No fields to update.');
+    }
+   
+    paramm.push(id);
+
+    db.run(
+        `UPDATE product SET ${queryadd.join(', ')} WHERE id = ?`,
+        paramm,
+        (err) => {
+            if (err) return res.status(500).send(err.message); 
+            res.status(200).send('product updated successfully');
+        }
+    );
+});
+
+
+
+
+
+
+
+
 
 
 
