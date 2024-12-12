@@ -144,6 +144,94 @@ server.get(`/brands/search`, (req, res) => {
 
 })
 
+server.delete('/brand/delete/:id', (req, res)=>{
+    let brandid= parseInt(req.params.id,10)
+    const deleting_brand= `DELETE FROM brand WHERE id =${brandid}`
+    db.run(deleting_brand, (err) =>{
+        if (err){
+            return res.status(500).send("brand cannot be deleted")
+
+        }else {
+            return res.status(200).send("brand deleted successfully")
+        }
+    })
+
+})
+
+
+server.get(`/products/search`, (req, res) => {
+    let name = req.query.name
+    let description = req.query.description
+    let size = req.query.size
+    let price = req.query.price
+    let query = `SELECT * FROM product WHERE QUANTITY>0`
+    if (name)
+        query += ` AND NAME='${name}'`
+    if (description)
+        query += ` AND DESCRIPTION='${description}'`
+    if (size)
+        query += ` AND SIZE='${size}'`
+    if (price)
+        query += `AND PRICE='${price}'`
+
+    db.all(query, (err, rows) => {
+        if (err) {
+            console.log(err)
+            return res.status(500).send(err)
+        }
+        else {
+            return res.status(200).send.json(rows)
+        }
+    })
+
+})
+
+
+
+server.post(`/products/addproduct`, (req, res) => {
+    let name = req.body.name
+    let description = req.body.description
+    let size = req.body.size
+    let price = req.body.price
+    let query = `INSERT INTO brand (name,description,size,price) 
+    VALUES ('${name}', '${description}', '${size}', '${price}')`;
+    db.run(query, (err) => {
+        if (err) {
+            console.log(err)
+            return res.status(500).send(err)
+        }
+        else {
+            return res.status(200).send(`product added successfully`)
+        }
+    })
+
+})
+
+
+server.delete('/product/delete/:id', (req, res)=>{
+    let productid= parseInt(req.params.id,10)
+    const deleting_product= `DELETE FROM product WHERE id =${productid}`
+    db.run(deleting_product, (err) =>{
+        if (err){
+            return res.status(500).send("product cannot be deleted")
+
+        }else {
+            return res.status(200).send("product deleted successfully")
+        }
+    })
+
+})
+
+
+
+
+
+
+
+
+
+
+
 
 
 
