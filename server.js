@@ -117,6 +117,38 @@ server.post(`/brands/addbrand`, (req, res) => {
 })
 
 
+server.get(`/brands/search`, (req, res) => {
+    let name = req.query.name
+    let description = req.query.description
+    let location = req.query.location
+    let rating = req.query.rating
+    let query = `SELECT * FROM brand WHERE QUANTITY>0`
+    if (name)
+        query += ` AND NAME='${name}'`
+    if (description)
+        query += ` AND DESCRIPTION='${description}'`
+    if (location)
+        query += ` AND LOCATION='${location}'`
+    if (rating)
+        query += `AND RATING='${rating}'`
+
+    db.all(query, (err, rows) => {
+        if (err) {
+            console.log(err)
+            return res.status(500).send(err)
+        }
+        else {
+            return res.status(200).send.json(rows)
+        }
+    })
+
+})
+
+
+
+
+
+
 
 
 
