@@ -389,11 +389,90 @@ server.post(`/products/buyproduct`, (req, res) => {
 
 
 
+server.post(`/feedback/website`, (req, res) => {
+    let userid = req.body.userid; 
+    let comment = req.body.comment; 
+    let rating = req.body.rating; 
+
+    
+    if (rating < 1 || rating > 10) {
+        return res.status(400).send('Rating must be between 1 and 10');
+    }
+
+    
+    let query = `INSERT INTO website_feedback (user_id, comment, rating) 
+    VALUES ('${userid}', '${comment}', '${rating}')`;
+
+    db.run(query, (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).send('Error submitting website feedback');
+        } else {
+            return res.status(200).send('Website feedback submitted successfully');
+        }
+    });
+});
 
 
 
 
 
+server.post(`/feedback/product`, (req, res) => {
+    let productid = req.body.productid; 
+    let userid = req.body.userid; 
+    let comment = req.body.comment; 
+    let rating = req.body.rating; 
+
+
+    if (rating < 1 || rating > 10) {
+        return res.status(400).send('Rating must be between 1 and 10');
+    }
+
+    let query = `INSERT INTO product_feedback (product_id, user_id, comment, rating) 
+    VALUES ('${productid}', '${userid}', '${comment}', '${rating}')`;
+
+    db.run(query, (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).send('Error submitting product feedback');
+        } else {
+            return res.status(200).send('Product feedback submitted successfully');
+        }
+    });
+});
+
+
+
+
+
+
+
+
+
+
+server.post(`/feedback/brand`, (req, res) => {
+    let brandid = req.body.brandid; 
+    let userid = req.body.userid; 
+    let comment = req.body.comment; 
+    let rating = req.body.rating; 
+
+    
+    if (rating < 1 || rating > 10) {
+        return res.status(400).send('Rating must be between 1 and 10');
+    }
+
+    let query = `INSERT INTO brand_feedback (brand_id, user_id, comment, rating) 
+    VALUES ('${brandid}', '${userid}', '${comment}', '${rating}')`;
+
+    db.run(query, (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).send('Error submitting brand feedback');
+        } else {
+            return res.status(200).send('Brand feedback submitted successfully');
+        }
+    });
+});
 
 
 
