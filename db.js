@@ -10,7 +10,15 @@ const CreateUsertable =`CREATE TABLE IF NOT EXISTS user(
     password TEXT NOT NULL,
     phonenumber TEXT 
     )`;
-    
+
+const CreateBrandstable= `CREATE TABLE IF NOT EXISTS brand(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    brandname TEXT NOT NULL,
+    description TEXT,
+    rating INTEGER NOT NULL,
+    location TEXT
+    )`;
+
 db.serialize(()=>{
     db.run(CreateUsertable,(err)=>{
         if (err){
@@ -21,4 +29,14 @@ db.serialize(()=>{
     
         }
     });
+    db.run(CreateBrandstable, (err)=>{
+        if (err){
+            console.error("failed to create brands table")
+        }
+        else {
+            console.log("brands table created successfully")
+        }
+    });
 });
+
+module.exports={db, CreateUsertable, CreateBrandstable}
