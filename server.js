@@ -1,7 +1,7 @@
 const express = require("express");
 const db_access=require('./db.js');
 const db=db_access.db;
-const port= 1517;
+const port= 1515;
 const server=express();
 server.use(express.json());
 
@@ -473,18 +473,6 @@ server.post(`/feedback/brand`, (req, res) => {
         }
     });
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 server.listen(port, ()=>{
