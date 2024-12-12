@@ -14,7 +14,8 @@ const CreateBrandTable = `CREATE TABLE IF NOT EXISTS brand(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT NOT NULL, 
-    locations TEXT NOT NULL
+    location TEXT NOT NULL,
+    rating TEXT
   )`;
 
 const CreateProductTable = `CREATE TABLE IF NOT EXISTS product(
@@ -33,7 +34,7 @@ const CreateFeedbackTable = `CREATE TABLE IF NOT EXISTS feedback(
     userid INTEGER NOT NULL,
     brandid INTEGER,
     productid INTEGER,
-    text TEXT NOT NULL,
+    comment TEXT NOT NULL,
     rating INTEGER,
     FOREIGN KEY(userid) REFERENCES user(id),
     FOREIGN KEY(brandid) REFERENCES brand(id),
