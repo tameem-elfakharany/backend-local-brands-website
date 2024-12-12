@@ -354,7 +354,38 @@ server.put('/products/:id', (req, res) => {
 
 
 
+server.post(`/products/buyproduct`, (req, res) => {
+    let productId = req.body.productId;
 
+    let checkQuery = `SELECT quantity FROM product WHERE id = '${productId}'`;
+
+    db.get(checkQuery, (err, row) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).send('Error fetching product details');
+        }
+
+        if (!row) {
+            return res.status(404).send('Product not found');
+        }
+
+        if (row.quantity > 0) {
+            
+            let updateQuery = `UPDATE product SET quantity = quantity - 1 WHERE id = '${productId}'`;
+
+            db.run(updateQuery, (updateErr) => {
+                if (updateErr) {
+                    console.log(updateErr);
+                    return res.status(500).send('Error updating product quantity');
+                }
+
+                return res.status(200).send('Purchase complete');
+            });
+        } else {
+            return res.status(400).send('Product out of stock');
+        }
+    });
+});
 
 
 
