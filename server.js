@@ -1,11 +1,10 @@
 const express = require("express");
-// const db_access=require('./db.js');
-// const db=db_access.db;
+const db_access=require('./db.js');
+const db=db_access.db;
 const port= 1517;
 const server=express();
 server.use(express.json());
-const sqlite3= require('sqlite3').verbose();
-const db = new sqlite3.Database('./database.db');
+
 
 server.post('/user/register', (req , res)=> {
     let name = req.body.name;
@@ -16,7 +15,6 @@ server.post('/user/register', (req , res)=> {
 
     if (!name || !email || !password || !username|| !phonenumber){
         return res.status(400).send('registration is required');
-
     }
     const insertquery = `INSERT INTO user(name, email, password, username, phonenumber)Values('${name}', '${email}', '${password}', '${username}', '${phonenumber}')`;
     db.run(insertquery, (err) =>{
@@ -78,15 +76,4 @@ server.get('/users', (req, res) => {
 
 server.listen(port, ()=>{
     console.log(`server is listening at port: ${port}`)
-    db.serialize(()=>{
-        db.run(CreateUsertable,(err)=>{
-            if (err){
-                console.error("failed to create user table",err)
-    
-            }
-            else {console.log("UserTable created successfully")
-    
-            }
-        })
-    })
 })
