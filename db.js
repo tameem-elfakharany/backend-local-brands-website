@@ -14,7 +14,7 @@ const CreateBrandTable = `CREATE TABLE IF NOT EXISTS brand(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT NOT NULL, 
-    locations TEXT NOT NULL,
+    locations TEXT NOT NULL
   )`;
 
 const CreateProductTable = `CREATE TABLE IF NOT EXISTS product(
