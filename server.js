@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 const db = db_access.db;
-const port = 1515;
+const port = 3000;
 const secret_key = 'DFGddssFHHHd444HJfWgsdhsdfg___!!!@@@@!';
 
 const server = express();
