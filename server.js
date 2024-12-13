@@ -1,11 +1,37 @@
 const express = require("express");
-const db_access=require('./db.js');
-const db=db_access.db;
-const port= 1515;
-const server=express();
+const db_access = require('./db.js');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const db = db_access.db;
+const port = 1515;
+const secret_key = 'DFGddssFHHHd444HJfWgsdhsdfg___!!!@@@@!';
+
+const server = express();
+server.use(cors({
+    origin: "http://localhost:3000",
+    credentials: true
+}));
 server.use(express.json());
 
+const generateToken = (id, isAdmin) => {
+    return jwt.sign({ id, isAdmin }, secret_key, { expiresIn: '1h' });
+};
 
+const verifyToken = (req, res, next) => {
+    const token = req.cookies.authToken;
+    if (!token) {
+        return res.status(401).send('Unauthorized');
+    }
+    jwt.verify(token, secret_key, (err, details) => {
+        if (err) {
+            return res.status(403).send('Invalid or expired token');
+        }
+        req.userDetails = details;
+        next();
+    });
+};
 server.post('/user/register', (req , res)=> {
     let name = req.body.name;
     let email = req.body.email;
@@ -16,20 +42,24 @@ server.post('/user/register', (req , res)=> {
     if (!name || !email || !password || !username){
         return res.status(400).send('registration is incomplete');
     }
-
-    const insertQuery = `INSERT INTO user(name, email, password, username, phonenumber) 
-        VALUES (?, ?, ?, ?, ?)`;
-    
-    db.run(insertQuery, [name, email, password, username, phonenumber], (err) => {
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
         if (err) {
-            console.log(err);
-            return res.status(500).send('invalid  registration');
-        } else {
-            return res.status(200).send('Registration successful');
+            return res.status(500).send('Error hashing password');
         }
-    })
-})
 
+    const insertQuery = `INSERT INTO user(name, email, password, username, phonenumber, isadmin) 
+        VALUES (?, ?, ?, ?, ?, ?)`;
+        
+        db.run(insertQuery, [name, email, hashedPassword, username, phonenumber, 0], (err) => {
+            if (err) {
+                console.log(err);
+            return res.status(500).send('invalid  registration');
+            } else {
+                return res.status(200).send('Registration successful');
+            }
+        });
+    });
+});
 
 server.post('/user/login', (req , res)=> {
     let email = req.body.email;
@@ -52,12 +82,15 @@ server.post('/user/login', (req , res)=> {
         else {
             return res.status(200).send(`successful login`);
         }
-    })
-})
+    });
+});
 
 
-server.get('/users', (req, res) => {
-    const getAllUsersQuery = `SELECT * FROM user` ;
+server.get('/users', verifyToken, (req, res) => {
+    if (!req.userDetails.isAdmin) {
+        return res.status(403).send('Admin access required');
+    }
+
 
     db.all(getAllUsersQuery, [], (err, rows) => {
         if (err) {
@@ -68,7 +101,7 @@ server.get('/users', (req, res) => {
         if (rows.length === 0) {
             return res.status(404).send("No users found.");
         } else {
-            return res.status(200).json(rows); 
+        return res.status(200).json(rows);
         }
     });
 });
@@ -86,8 +119,12 @@ server.delete('/user/account/delete/:id', (req, res)=>{
     })
 
 })
+server.post('/user/logout', (req, res) => {
+    res.clearCookie('authToken');
+    return res.status(200).send('Logged out successfully');
+});
 
-server.get('/allbrands', (req, res) => {
+server.get('/allbrands', verifyToken, (req, res) => {
     const getAllbrandsQuery = `SELECT * FROM brand` ;
 
     db.all(getAllbrandsQuery, [], (err, rows) => {
@@ -104,7 +141,11 @@ server.get('/allbrands', (req, res) => {
     });
 });
 
-server.post(`/brands/addbrand`, (req, res) => {
+server.post(`/brands/addbrand`, verifyToken, (req, res) => {
+    if (!req.userDetails.isAdmin) {
+        return res.status(403).send('Admin access required');
+    }
+
     let name = req.body.name
     let description = req.body.description
     let location = req.body.location
@@ -114,7 +155,7 @@ server.post(`/brands/addbrand`, (req, res) => {
         return res.status(400).send('Name, description, and location are required');
     }
     
-    if (!rating || rating < 0 || rating > 10)) {
+    if (!rating || rating < 0 || rating > 10) {
         return res.status(400).send('Rating must be a number between 0 and 10');
     }
     
@@ -132,8 +173,7 @@ server.post(`/brands/addbrand`, (req, res) => {
 
 })
 
-
-server.get(`/brands/search`, (req, res) => {
+server.get(`/brands/search`, verifyToken, (req, res) => {
     let name = req.query.name
     let description = req.query.description
     let location = req.query.location
@@ -160,7 +200,11 @@ server.get(`/brands/search`, (req, res) => {
 
 })
 
-server.delete('/brand/delete/:id', (req, res)=>{
+server.delete('/brand/delete/:id', verifyToken, (req, res)=>{
+    if (!req.userDetails.isAdmin) {
+        return res.status(403).send('Admin access required');
+    }
+
     let brandid= parseInt(req.params.id,10)
     const deleting_brand= `DELETE FROM brand WHERE id =?`
     db.run(deleting_brand, [brandid], (err) =>{
@@ -174,8 +218,7 @@ server.delete('/brand/delete/:id', (req, res)=>{
 
 })
 
-
-server.get(`/products/search`, (req, res) => {
+server.get(`/products/search`, verifyToken, (req, res) => {
     let name = req.query.name
     let description = req.query.description
     let size = req.query.size
@@ -202,9 +245,11 @@ server.get(`/products/search`, (req, res) => {
 
 })
 
+server.post(`/products/addproduct`, verifyToken, (req, res) => {
+    if (!req.userDetails.isAdmin) {
+        return res.status(403).send('Admin access required');
+    }
 
-
-server.post(`/products/addproduct`, (req, res) => {
     let name = req.body.name
     let description = req.body.description
     let size = req.body.size
@@ -228,8 +273,11 @@ server.post(`/products/addproduct`, (req, res) => {
 
 })
 
+server.delete('/product/delete/:id', verifyToken, (req, res)=>{
+    if (!req.userDetails.isAdmin) {
+        return res.status(403).send('Admin access required');
+    }
 
-server.delete('/product/delete/:id', (req, res)=>{
     let productid= parseInt(req.params.id,10)
     const deleting_product= `DELETE FROM product WHERE id =?`
     db.run(deleting_product, [productid], (err) =>{
@@ -243,8 +291,7 @@ server.delete('/product/delete/:id', (req, res)=>{
 
 })
 
-
-server.put('/user/:id', (req, res) => {
+server.put('/user/:id', verifyToken, (req, res) => {
     const { id } = req.params; 
     const { name, email, username, password, phonenumber} = req.body;
     let queryadd = [];
@@ -264,8 +311,13 @@ server.put('/user/:id', (req, res) => {
         paramm.push(username);
     }
     if (password) {
-        queryadd.push("password = ?");
-        paramm.push(password);
+        bcrypt.hash(password, 10, (err, hashedPassword) => {
+            if (err) {
+                return res.status(500).send('Error hashing password');
+            }
+            queryadd.push("password = ?");
+            paramm.push(hashedPassword);
+        });
     }
     if (phonenumber) {
         queryadd.push("phonenumber = ?");
@@ -288,11 +340,11 @@ server.put('/user/:id', (req, res) => {
     );
 });
 
+server.put('/brand/:id', verifyToken, (req, res) => {
+    if (!req.userDetails.isAdmin) {
+        return res.status(403).send('Admin access required');
+    }
 
-
-
-
-server.put('/brand/:id', (req, res) => {
     const { id } = req.params; 
     const { name, description, location, rating} = req.body;
     let queryadd = [];
@@ -332,8 +384,11 @@ server.put('/brand/:id', (req, res) => {
     );
 });
 
+server.put('/products/:id', verifyToken, (req, res) => {
+    if (!req.userDetails.isAdmin) {
+        return res.status(403).send('Admin access required');
+    }
 
-server.put('/products/:id', (req, res) => {
     const { id } = req.params; 
     const { name, description, price, size} = req.body;
     let queryadd = [];
@@ -373,9 +428,7 @@ server.put('/products/:id', (req, res) => {
     );
 });
 
-
-
-server.post(`/products/buyproduct`, (req, res) => {
+server.post(`/products/buyproduct`, verifyToken, (req, res) => {
     let productId = req.body.productId;
 
     let checkQuery = `SELECT quantity FROM product WHERE id = ?`;
@@ -408,9 +461,7 @@ server.post(`/products/buyproduct`, (req, res) => {
     });
 });
 
-
-
-server.post(`/feedback/website`, (req, res) => {
+server.post(`/feedback/website`, verifyToken, (req, res) => {
     let userid = req.body.userid; 
     let comment = req.body.comment; 
     let rating = req.body.rating; 
@@ -434,11 +485,7 @@ server.post(`/feedback/website`, (req, res) => {
     });
 });
 
-
-
-
-
-server.post(`/feedback/product`, (req, res) => {
+server.post(`/feedback/product`, verifyToken, (req, res) => {
     let productid = req.body.productid; 
     let userid = req.body.userid; 
     let comment = req.body.comment; 
@@ -462,16 +509,7 @@ server.post(`/feedback/product`, (req, res) => {
     });
 });
 
-
-
-
-
-
-
-
-
-
-server.post(`/feedback/brand`, (req, res) => {
+server.post(`/feedback/brand`, verifyToken, (req, res) => {
     let brandid = req.body.brandid; 
     let userid = req.body.userid; 
     let comment = req.body.comment; 
