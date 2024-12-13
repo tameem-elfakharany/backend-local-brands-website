@@ -16,13 +16,16 @@ server.post('/user/register', (req , res)=> {
     if (!name || !email || !password || !username){
         return res.status(400).send('registration is incomplete');
     }
-    const insertquery = `INSERT INTO user(name, email, password, username, phonenumber)Values('${name}', '${email}', '${password}', '${username}', '${phonenumber}')`;
-    db.run(insertquery, (err) =>{
-        if(err){
-            return res.status(500).send(`invalid registration: ${err.message}`);
-        } 
-        else {
-            return res.status(200).send(`successful registration`);
+
+    const insertQuery = `INSERT INTO user(name, email, password, username, phonenumber) 
+        VALUES (?, ?, ?, ?, ?)`;
+    
+    db.run(insertQuery, [name, email, password, username, phonenumber], (err) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).send('invalid  registration');
+        } else {
+            return res.status(200).send('Registration successful');
         }
     })
 })
@@ -33,15 +36,19 @@ server.post('/user/login', (req , res)=> {
     let password = req.body.password;
     let username = req.body.username;
 
-    if ( !email || !password || !username){
+    if (!email || !password || !username) {
         return res.status(400).send('missing fields');
-
     }
-    const loginquery = `SELECT * FROM user WHERE email = '${email}' AND password ='${password}' AND username = '${username}'`;
-    db.get(loginquery, (err, row) =>{
-        if(err){
-            return res.status(500).send(`invalid login: ${err.message}`);
-        } 
+
+    const loginQuery = `SELECT * FROM user WHERE email = ? AND password = ? AND username = ?`;
+    db.get(loginQuery, [email, password, username], (err, user) => {
+        if (err) {
+            console.log(err);
+            return res.status(500).send('Error during login');
+        }
+        if (!user) {
+            return res.status(401).send('Invalid credentials');
+        }
         else {
             return res.status(200).send(`successful login`);
         }
@@ -68,8 +75,8 @@ server.get('/users', (req, res) => {
 
 server.delete('/user/account/delete/:id', (req, res)=>{
     let usersid= parseInt(req.params.id,10)
-    const deleting_account= `DELETE FROM user WHERE id =${usersid}`
-    db.run(deleting_account, (err) =>{
+    const deleting_account= `DELETE FROM user WHERE id =?`
+    db.run(deleting_account, [usersid], (err) =>{
         if (err){
             return res.status(500).send("account cannot be deleted")
 
@@ -102,9 +109,18 @@ server.post(`/brands/addbrand`, (req, res) => {
     let description = req.body.description
     let location = req.body.location
     let rating = req.body.rating
-    let query = `INSERT INTO brand (name,description,location,rating) 
-    VALUES ('${name}', '${description}', '${location}', '${rating}')`;
-    db.run(query, (err) => {
+    
+    if (!name || !description || !location) {
+        return res.status(400).send('Name, description, and location are required');
+    }
+    
+    if (!rating || rating < 0 || rating > 10)) {
+        return res.status(400).send('Rating must be a number between 0 and 10');
+    }
+    
+    let query = `INSERT INTO brand (name, description, location, rating) 
+    VALUES (?, ?, ?, ?)`;
+    db.run(query, [name, description, location, rating], (err) => {
         if (err) {
             console.log(err)
             return res.status(500).send(err)
@@ -135,10 +151,10 @@ server.get(`/brands/search`, (req, res) => {
     db.all(query, (err, rows) => {
         if (err) {
             console.log(err)
-            return res.status(500).send(err)
+            return res.status(500).send("error searching brand")
         }
         else {
-            return res.status(200).send.json(rows)
+            return res.status(200).json(rows)
         }
     })
 
@@ -146,8 +162,8 @@ server.get(`/brands/search`, (req, res) => {
 
 server.delete('/brand/delete/:id', (req, res)=>{
     let brandid= parseInt(req.params.id,10)
-    const deleting_brand= `DELETE FROM brand WHERE id =${brandid}`
-    db.run(deleting_brand, (err) =>{
+    const deleting_brand= `DELETE FROM brand WHERE id =?`
+    db.run(deleting_brand, [brandid], (err) =>{
         if (err){
             return res.status(500).send("brand cannot be deleted")
 
@@ -177,10 +193,10 @@ server.get(`/products/search`, (req, res) => {
     db.all(query, (err, rows) => {
         if (err) {
             console.log(err)
-            return res.status(500).send(err)
+            return res.status(500).send("error searching product")
         }
         else {
-            return res.status(200).send.json(rows)
+            return res.status(200).json(rows)
         }
     })
 
@@ -193,12 +209,17 @@ server.post(`/products/addproduct`, (req, res) => {
     let description = req.body.description
     let size = req.body.size
     let price = req.body.price
-    let query = `INSERT INTO brand (name,description,size,price) 
-    VALUES ('${name}', '${description}', '${size}', '${price}')`;
-    db.run(query, (err) => {
+    
+    if (!name || !description || !size || !price) {
+        return res.status(400).send('All fields are required');
+    }
+    
+    let query = `INSERT INTO product (name, description, size, price) 
+    VALUES (?, ?, ?, ?)`;
+    db.run(query, [name, description, size, price], (err) => {
         if (err) {
             console.log(err)
-            return res.status(500).send(err)
+            return res.status(500).send("product cannot be added")
         }
         else {
             return res.status(200).send(`product added successfully`)
@@ -210,8 +231,8 @@ server.post(`/products/addproduct`, (req, res) => {
 
 server.delete('/product/delete/:id', (req, res)=>{
     let productid= parseInt(req.params.id,10)
-    const deleting_product= `DELETE FROM product WHERE id =${productid}`
-    db.run(deleting_product, (err) =>{
+    const deleting_product= `DELETE FROM product WHERE id =?`
+    db.run(deleting_product, [productid], (err) =>{
         if (err){
             return res.status(500).send("product cannot be deleted")
 
@@ -357,9 +378,9 @@ server.put('/products/:id', (req, res) => {
 server.post(`/products/buyproduct`, (req, res) => {
     let productId = req.body.productId;
 
-    let checkQuery = `SELECT quantity FROM product WHERE id = '${productId}'`;
+    let checkQuery = `SELECT quantity FROM product WHERE id = ?`;
 
-    db.get(checkQuery, (err, row) => {
+    db.get(checkQuery, [productId], (err, row) => {
         if (err) {
             console.log(err);
             return res.status(500).send('Error fetching product details');
@@ -371,9 +392,9 @@ server.post(`/products/buyproduct`, (req, res) => {
 
         if (row.quantity > 0) {
             
-            let updateQuery = `UPDATE product SET quantity = quantity - 1 WHERE id = '${productId}'`;
+            let updateQuery = `UPDATE product SET quantity = quantity - 1 WHERE id = ?`;
 
-            db.run(updateQuery, (updateErr) => {
+            db.run(updateQuery, [productId], (updateErr) => {
                 if (updateErr) {
                     console.log(updateErr);
                     return res.status(500).send('Error updating product quantity');
@@ -401,9 +422,9 @@ server.post(`/feedback/website`, (req, res) => {
 
     
     let query = `INSERT INTO website_feedback (user_id, comment, rating) 
-    VALUES ('${userid}', '${comment}', '${rating}')`;
+    VALUES (?, ?, ?)`;
 
-    db.run(query, (err) => {
+    db.run(query, [userid, comment, rating], (err) => {
         if (err) {
             console.log(err);
             return res.status(500).send('Error submitting website feedback');
@@ -429,9 +450,9 @@ server.post(`/feedback/product`, (req, res) => {
     }
 
     let query = `INSERT INTO product_feedback (productid, userid, comment, rating) 
-    VALUES ('${productid}', '${userid}', '${comment}', '${rating}')`;
+    VALUES (?, ?, ?, ?)`;
 
-    db.run(query, (err) => {
+    db.run(query, [productid, userid, comment, rating], (err) => {
         if (err) {
             console.log(err);
             return res.status(500).send('Error submitting product feedback');
@@ -462,9 +483,9 @@ server.post(`/feedback/brand`, (req, res) => {
     }
 
     let query = `INSERT INTO brand_feedback (brand_id, user_id, comment, rating) 
-    VALUES ('${brandid}', '${userid}', '${comment}', '${rating}')`;
+    VALUES (?, ?, ?, ?)`;
 
-    db.run(query, (err) => {
+    db.run(query, [brandid, userid, comment, rating], (err) => {
         if (err) {
             console.log(err);
             return res.status(500).send('Error submitting brand feedback');
