@@ -428,7 +428,7 @@ server.post(`/feedback/product`, (req, res) => {
         return res.status(400).send('Rating must be between 1 and 10');
     }
 
-    let query = `INSERT INTO product_feedback (product_id, user_id, comment, rating) 
+    let query = `INSERT INTO product_feedback (productid, userid, comment, rating) 
     VALUES ('${productid}', '${userid}', '${comment}', '${rating}')`;
 
     db.run(query, (err) => {
