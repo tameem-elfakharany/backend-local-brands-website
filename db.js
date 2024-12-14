@@ -16,7 +16,7 @@ const CreateBrandTable = `CREATE TABLE IF NOT EXISTS brand(
     name TEXT NOT NULL,
     description TEXT NOT NULL, 
     location TEXT NOT NULL,
-    rating TEXT
+    rating INTEGER CHECK(rating >= 0 AND rating <= 10)
   )`;
 
 const CreateProductTable = `CREATE TABLE IF NOT EXISTS product(
