@@ -10,10 +10,14 @@ const secret_key = 'DFGddssFHHHd444HJfWgsdhsdfg___!!!@@@@!';
 
 const server = express();
 server.use(cors({
-    origin: "http://localhost:3000",
-    credentials: true
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+    exposedHeaders: ['Set-Cookie']
 }));
 server.use(express.json());
+server.use(cookieParser());
 
 const generateToken = (id, isAdmin) => {
     return jwt.sign({ id, isAdmin }, secret_key, { expiresIn: '1h' });
@@ -70,8 +74,8 @@ server.post('/user/login', (req , res)=> {
         return res.status(400).send('missing fields');
     }
 
-    const loginQuery = `SELECT * FROM user WHERE email = ? AND password = ? AND username = ?`;
-    db.get(loginQuery, [email, password, username], (err, user) => {
+    const loginQuery = `SELECT * FROM user WHERE email = ? AND username = ?`;
+    db.get(loginQuery, [email, username], async (err, user) => {
         if (err) {
             console.log(err);
             return res.status(500).send('Error during login');
@@ -79,19 +83,41 @@ server.post('/user/login', (req , res)=> {
         if (!user) {
             return res.status(401).send('Invalid credentials');
         }
-        else {
-            return res.status(200).send(`successful login`);
+
+        try {
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.status(401).send('Invalid credentials');
+            }
+
+            const token = generateToken(user.id, user.isadmin || 0);
+            res.cookie('authToken', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                path: '/',
+                domain: 'localhost',
+                maxAge: 3600000 // 1 hour
+            });
+
+            return res.status(200).json({
+                id: user.id,
+                admin: user.isadmin || 0,
+                message: 'Login successful'
+            });
+        } catch (err) {
+            console.log(err);
+            return res.status(500).send('Error verifying password');
         }
     });
 });
-
 
 server.get('/users', verifyToken, (req, res) => {
     if (!req.userDetails.isAdmin) {
         return res.status(403).send('Admin access required');
     }
 
-
+    const getAllUsersQuery = `SELECT * FROM user`;
     db.all(getAllUsersQuery, [], (err, rows) => {
         if (err) {
             console.error("Database error:", err);
@@ -101,7 +127,7 @@ server.get('/users', verifyToken, (req, res) => {
         if (rows.length === 0) {
             return res.status(404).send("No users found.");
         } else {
-        return res.status(200).json(rows);
+            return res.status(200).json(rows);
         }
     });
 });
@@ -535,5 +561,19 @@ server.post(`/feedback/brand`, verifyToken, (req, res) => {
 
 
 server.listen(port, ()=>{
-    console.log(`server is listening at port: ${port}`)
-})
+    console.log(`Server is running at http://localhost:${port}`);
+    console.log('Available routes:');
+    console.log('POST /user/register - Register a new user');
+    console.log('POST /user/login - Login user');
+    console.log('GET /users - Get all users (protected)');
+    db.serialize(() => {
+        db.run(db_access.CreateUsertable, (err) => {
+            if (err) {
+                console.error("Failed to create user table:", err);
+            } else {
+                console.log("User table ready");
+            }
+        });
+        // Other table creations...
+    });
+});
